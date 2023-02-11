@@ -12,7 +12,7 @@ setup(
     author="datanooblol",
     author_email="data.noob.lol@gmail.com",
     url="https://github.com/datanooblol/ezconfiguration",
-    description="This is an easy way to a configuration file in json format.",
+    description="This is an easy way to write a configuration file in a json format.",
     long_description=long_description,
     long_description_content_type="text/markdown",    
     packages=find_packages(),

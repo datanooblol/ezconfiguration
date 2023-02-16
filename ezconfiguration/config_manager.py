@@ -170,8 +170,50 @@ class EzConfig:
             self.write_config_file(config_dict=updated_config, replace=True)
         else:
             raise Exception(f"Your new config already exists {list(intersect_config)} if you want to replace it change 'replace=True'.")
+
+    def _update_config_nested(self, existing_config:dict, key:list, value:Any) -> tuple:
+        _validate_key = existing_config.copy()
+        size = len(key)
+        key_list = []
+        val_list = []
+        for enum, k in enumerate(key):
             
-    def update_config(self, key:str, value:Any, replace=False):
+            if k in _validate_key:
+                
+                key_list.append(k)
+                _validate_key = _validate_key[k]
+
+                if size != enum+1:
+                    val_list.append(_validate_key)
+                else:
+                    val_list.append(value)
+
+            else:
+                raise Exception(f"No nested keys in this order {key}. Check your nested keys again.")    
+                
+        r_key_list = key_list[::-1]
+        r_val_list = val_list[::-1]
+        
+        for i in range(size):
+            
+            if i < size-1:
+                
+                k = r_key_list[i]
+                v = r_val_list[i]
+                r_val_list[i+1] = {k:v}
+
+        nested_dict = {r_key_list[-1]:r_val_list[-1]}
+        root_key = key[0]
+        existing_config[root_key] = nested_dict[root_key]
+        return existing_config, nested_dict
+
+    def _update_config_root(self, existing_config:dict, key:str, value:Any) -> tuple:
+
+        existing_config[key] = value
+        return existing_config, {key:value}
+        
+    
+    def update_config(self, key:Union[str,List[str]], value:Any, replace=False):
         """update the existing configuration's element
         
         Notes
@@ -181,7 +223,7 @@ class EzConfig:
         
         Parameters
         ----------
-        key : str
+        key : str or list
             a key string
         value : Any
             a value includes int, str, list, dict
@@ -193,11 +235,16 @@ class EzConfig:
             The path saved
         """        
         existing_config = self.read_config_file()
-        if key not in existing_config or replace==True:
-            existing_config[key] = value
-            self.write_config_file(config_dict=existing_config, replace=True)    
+        if isinstance(key, dict):
+            raise Exception(f"key should be list, str, int. Not dict")
+        elif isinstance(key, list):
+            updated_config, element = self._update_config_nested(existing_config, key, value)
         else:
-            raise Exception(f"Your new config already exists '{key}' if you want to replace it change 'replace=True'.")
+            updated_config, element = self._update_config_root(existing_config, key, value)
+        if replace==True:
+            self.write_config_file(config_dict=updated_config, replace=True)    
+        else:
+            raise Exception(f"If you want to update {element}, change 'replace=True'.")
     
     def delete_config(self, key:str) -> str:
         """delete the existing configuration's element
